@@ -27,14 +27,15 @@ export default function AppNavigator() {
             options={{ title: 'Create Account' }}
           />
         </>
+        
       ) : (
         <>
-          <Stack.Screen 
+           <Stack.Screen 
             name="Home" 
             component={HomeScreen}
-            options={{ 
-              title: 'My Tasks',
-              headerLeft: null,
+            options={{
+              title: 'Tasks',
+              headerBackVisible: false
             }}
           />
           <Stack.Screen 

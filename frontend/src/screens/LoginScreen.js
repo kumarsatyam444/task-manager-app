@@ -14,15 +14,17 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      setLoading(true);
-      const response = await api.post('/auth/login', { email, password });
-      await AsyncStorage.setItem('token', response.data.token);
-      dispatch(setCredentials(response.data));
-      navigation.navigate('Home');
+      const response = await api.post('/auth/login', {
+        email,
+        password,
+      });
+      
+      const { token, user } = response.data;
+      await AsyncStorage.setItem('token', token);
+      dispatch(setCredentials({ token, user }));
+      // No navigation needed - AppNavigator will handle it
     } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+      console.error('Login error:', error);
     }
   };
 
