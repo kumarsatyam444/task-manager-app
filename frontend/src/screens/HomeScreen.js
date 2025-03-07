@@ -1,16 +1,17 @@
-import React, { useEffect } from 'react';
-import { View, FlatList, StyleSheet, Alert } from 'react-native';
-import { FAB, IconButton } from 'react-native-paper';
-import { useDispatch, useSelector } from 'react-redux';
-import { setTasks, deleteTask } from '../redux/taskSlice';
-import { logout } from '../redux/authSlice';
-import TaskItem from '../components/TaskItem';
-import api from '../utils/api';
+import React, { useState, useEffect } from 'react';
+import { View, FlatList, StyleSheet,route, } from 'react-native';
+import { List, FAB, IconButton } from 'react-native-paper';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuthHeaders } from '../utils/api';
+
+import { api, API_URL } from '../utils/api';
 
 export default function HomeScreen({ navigation }) {
-  const dispatch = useDispatch();
-  const tasks = useSelector(state => state.tasks.tasks);
+  const [tasks, setTasks] = useState([]);
+  const { token, logout } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     navigation.setOptions({
@@ -23,68 +24,103 @@ export default function HomeScreen({ navigation }) {
       ),
     });
   }, [navigation]);
-
+  const handleTaskAdded = async (newTask) => {
+    console.log('Adding new task:', newTask);
+  
+    setTasks((prevTasks) => [newTask, ...prevTasks]); 
+    setTimeout(fetchTasks, 500); 
+  };
+  
+  
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('token');
-      dispatch(logout());
+      logout();
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
-  
-
 
   const handleDelete = async (taskId) => {
     try {
-      await api.delete(`/tasks/${taskId}`);
-      dispatch(deleteTask(taskId));
-      Alert.alert('Success', 'Task deleted successfully');
+      await axios.delete(`${API_URL}/tasks/${taskId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTasks(tasks.filter(task => task._id !== taskId));
     } catch (error) {
       console.error('Delete error:', error);
-      Alert.alert('Error', 'Failed to delete task');
     }
   };
-
   const fetchTasks = async () => {
     try {
-      const response = await api.get('/tasks');
-      dispatch(setTasks(response.data));
+      if (!token) return;
+      
+      console.log('Fetching tasks using token:', token);
+  
+      const response = await axios.get(`${API_URL}/tasks`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      console.log('Tasks fetched:', response.data);
+      setTasks(response.data);
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.log('Fetch tasks error:', error.response?.data || error.message);
     }
   };
-
+  
+  
   useEffect(() => {
-    fetchTasks();
+    if (token) {
+      fetchTasks();
+      const unsubscribe = navigation.addListener('focus', fetchTasks);
+      return unsubscribe;
+    }
+  }, [token, navigation]);
+  
+  
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await fetchTasks();
+    setRefreshing(false);
   }, []);
 
   return (
     <View style={styles.container}>
       <FlatList
         data={tasks}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         renderItem={({ item }) => (
-          <TaskItem
-            task={item}
+          <List.Item
+            title={item.title}
+            description={item.description}
+            right={props => (
+              <IconButton
+                icon="delete"
+                onPress={() => handleDelete(item._id)}
+              />
+            )}
             onPress={() => navigation.navigate('TaskDetail', { task: item })}
-            onDelete={handleDelete}
           />
         )}
         keyExtractor={item => item._id}
-        refreshing={false}
-        onRefresh={fetchTasks}
       />
-      <FAB
-        style={styles.fab}
-        icon="plus"
-        onPress={() => navigation.navigate('AddTask')}
-      />
+<FAB
+  style={styles.fab}
+  icon="plus"
+  onPress={() => {
+    console.log('Navigating to AddTaskScreen');
+    navigation.navigate('AddTask', { onTaskAdded: handleTaskAdded });
+  }}
+/>
+
+
     </View>
   );
-}
-
-
-const styles = StyleSheet.create({
+}const styles = StyleSheet.create({
   container: {
     flex: 1,
   },

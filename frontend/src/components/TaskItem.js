@@ -3,8 +3,9 @@ import { Card, Title, Paragraph, IconButton } from 'react-native-paper';
 import { StyleSheet } from 'react-native';
 
 export default function TaskItem({ task, onPress, onDelete }) {
+  console.log('Rendering task:', task);
   return (
-    <Card style={styles.card}>
+    <Card style={styles.card} onPress={onPress}>
       <Card.Content>
         <Title>{task.title}</Title>
         <Paragraph>{task.description}</Paragraph>
@@ -18,6 +19,7 @@ export default function TaskItem({ task, onPress, onDelete }) {
     </Card>
   );
 }
+
 
 const styles = StyleSheet.create({
   card: {

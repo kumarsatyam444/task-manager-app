@@ -1,6 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { useSelector } from 'react-redux';
+import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -10,44 +10,25 @@ import TaskDetailScreen from '../screens/TaskDetailScreen';
 const Stack = createStackNavigator();
 
 export default function AppNavigator() {
-  const token = useSelector(state => state.auth.token);
+  const { token } = useAuth();
 
   return (
     <Stack.Navigator>
       {!token ? (
         <>
-          <Stack.Screen 
-            name="Login" 
-            component={LoginScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen 
-            name="Signup" 
-            component={SignupScreen}
-            options={{ title: 'Create Account' }}
-          />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Signup" component={SignupScreen} />
         </>
-        
       ) : (
         <>
-           <Stack.Screen 
-            name="Home" 
-            component={HomeScreen}
-            options={{
-              title: 'Tasks',
-              headerBackVisible: false
-            }}
-          />
+          <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen 
-            name="AddTask" 
-            component={AddTaskScreen}
-            options={{ title: 'Add New Task' }}
-          />
-          <Stack.Screen 
-            name="TaskDetail" 
-            component={TaskDetailScreen}
-            options={{ title: 'Task Details' }}
-          />
+  name="AddTask"
+  component={AddTaskScreen}
+  initialParams={{ onTaskAdded: () => {} }} 
+/>
+
+          <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
         </>
       )}
     </Stack.Navigator>

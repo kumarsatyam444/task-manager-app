@@ -1,28 +1,32 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput, Button, Switch, Text } from 'react-native-paper';
-import { useDispatch } from 'react-redux';
-import { updateTask } from '../redux/taskSlice';
-import api from '../utils/api';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 export default function TaskDetailScreen({ route, navigation }) {
   const { task } = route.params;
-  const dispatch = useDispatch();
+  const { token } = useAuth();
   
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
   const [completed, setCompleted] = useState(task.completed);
   const [loading, setLoading] = useState(false);
 
+  const API_URL = 'http://192.168.1.5:5000/api';
+
   const handleUpdate = async () => {
     try {
       setLoading(true);
-      const response = await api.put(`/tasks/${task._id}`, {
-        title,
-        description,
-        completed,
-      });
-      dispatch(updateTask(response.data));
+      await axios.put(
+        `${API_URL}/tasks/${task._id}`,
+        { title, description, completed },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
       navigation.goBack();
     } catch (error) {
       console.error(error);
@@ -30,7 +34,7 @@ export default function TaskDetailScreen({ route, navigation }) {
       setLoading(false);
     }
   };
-
+  
   return (
     <View style={styles.container}>
       <TextInput
